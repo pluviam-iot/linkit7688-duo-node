@@ -13,7 +13,7 @@ var util = require('util');
 var cp = require('child_process');
 var mraa = require('mraa'); // require mraa
 var uart = new mraa.Uart(0);
-var sensorArray = ['date', 'temperature', 'humidity', 'pressure', 'battery', 'precipitaion', 'windSpeed', 'windDirection'];
+var sensorArray = ['date', 'temperature', 'humidity', 'pressure', 'battery', 'precipitation', 'windSpeed', 'windDirection'];
 
 var sensorHeader = '';
 
