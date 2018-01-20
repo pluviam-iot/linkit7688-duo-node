@@ -3,8 +3,8 @@
 var serverUrl = 'backyard.pluvi.am';
 var stationId = '59f3eaf328c6a2439fd1323a';
 var token = 'wfho989ndg7kcs6c';
-var FILE = '/IoT/pluviam/db/db';
-var LINES_TO_GET = 1;
+var FILE = '/pluviam/db/db';
+var LINES_TO_GET = 10;
 
 var CronJob = require('cron').CronJob;
 var fs = require('fs');
@@ -13,7 +13,7 @@ var util = require('util');
 var cp = require('child_process');
 var mraa = require('mraa'); // require mraa
 var uart = new mraa.Uart(0);
-var sensorArray = ['date', 'temperature', 'humidity', 'pressure'];
+var sensorArray = ['date', 'temperature', 'humidity', 'pressure', 'battery', 'precipitaion', 'windSpeed', 'windDirection'];
 
 var sensorHeader = '';
 
@@ -46,7 +46,8 @@ function postBulk (json, isReSend, bytesLength) {
 }
 
 function post (url, json, isReSend, bytesLength) {
-	console.log('****** Send Data');
+//	console.log('****** Send Data');
+//	console.log(json);
 	var body = JSON.stringify(json);
 	var options = {
 		hostname: serverUrl,
@@ -60,8 +61,8 @@ function post (url, json, isReSend, bytesLength) {
 		}
 	};
 	var req = http.request(options, function (res) {
-		console.log('Status: ' + res.statusCode);
-		console.log('Headers: ' + JSON.stringify(res.headers));
+//		console.log('Status: ' + res.statusCode);
+//		console.log('Headers: ' + JSON.stringify(res.headers));
 		res.setEncoding('utf8');
 		res.on('data', function (body) {
 			if (res.statusCode === 200) {
@@ -167,15 +168,36 @@ new CronJob('00 * * * * *', function () {
 	uart.writeStr('A');
 	sleep(1000);
 	json.temperature = readUart();
-	// json.temperature = 18.3;
+
 	uart.writeStr('B');
 	sleep(1000);
 	json.humidity = readUart();
-	// json.humidity = 58;
+
 	uart.writeStr('C');
 	sleep(1000);
 	json.pressure = readUart();
-	// json.pressure = 92000;
+
+        uart.writeStr('K');                                                                                                                                              
+        sleep(1000);                                                                                                                                                     
+        json.battery = readUart();
+        
+	uart.writeStr('I');                                                                 
+        sleep(3000);                                                                        
+        json.windSpeed = readUart();    
+
+        uart.writeStr('E');                                                                 
+        sleep(1000);                                                                        
+        json.windDirection = processWindDir(readUart());
+
+        uart.writeStr('D');                                                                 
+        sleep(1000);                                                                        
+        json.precipitation = readUart();    
+	
+	if (json.precipitation == "0") {
+		json.precipitation = 0;	
+	}
+	
+	uart.writeStr('H');
 	postSingle(json);
 }, null, true, 'America/Los_Angeles');
 
@@ -205,6 +227,12 @@ function getLastLines (linesToGet, callback) {
 	});
 }
 
+function convertWindDirection (value) {
+	if (1==1) {
+		
+	}
+}
+
 function removeLastBytes (bytesLength, callback) {
 	fs.stat(FILE, function (err, stats) {
 		if (err) throw err;
@@ -215,3 +243,57 @@ function removeLastBytes (bytesLength, callback) {
 		});
 	});
 }
+
+function processWindDir(value) {
+  var windDir = '-';
+  if (value >= 44 && value <= 72) {
+    windDir = "ESE";
+  }
+  else if (value >= 73 && value <= 86) {
+    windDir = "ENE";
+  }
+  else if (value >= 87 && value <= 107) {
+    windDir = "E";
+  }
+  else if (value >= 109 && value <= 147) {
+    windDir = "SSE";
+  }
+  else if (value >= 164 && value <= 207) {
+    windDir = "SE";
+  }
+  else if (value >= 224 && value <= 266) {
+    windDir = "SSW";
+  }
+  else if (value >= 268 && value <= 310) {
+    windDir = "S";
+  }
+  else if (value >= 385 && value <= 427) {
+    windDir = "NNE";
+  }
+  else if (value >= 440 && value <= 482) {
+    windDir = "NE";
+  }
+  else if (value >= 577 && value <= 614) {
+    windDir = "WSW";
+  }
+  else if (value >= 615 && value <= 652) {
+    windDir = "SW";
+  }
+  else if (value >= 683 && value <= 725) {
+    windDir = "NNW";
+  }
+  else if (value >= 766 && value <= 807) {
+    windDir = "N";
+  }
+  else if (value >= 808 && value <= 849) {
+    windDir = "WNW";
+  }
+  else if (value >= 867 && value <= 909) {
+    windDir = "NW";
+  }
+  else if (value >= 925 && value <= 929) {
+    windDir = "W";
+  }
+  return windDir;
+}
+
