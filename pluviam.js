@@ -1,8 +1,11 @@
 'use strict';
 
+//TODO put it in external json
 var serverUrl = 'backyard.pluvi.am';
 var stationId = '59f3eaf328c6a2439fd1323a';
 var token = 'wfho989ndg7kcs6c';
+
+
 var FILE = '/pluviam/db/db';
 var LINES_TO_GET = 10;
 
@@ -37,12 +40,12 @@ function readUart () {
 
 function postSingle (json) {
 	var url = '/stations/' + stationId;
-	post(url, json);
+	//post(url, json);
 }
 
 function postBulk (json, isReSend, bytesLength) {
 	var url = '/stations/' + stationId + '/bulk';
-	post(url, json, isReSend, bytesLength);
+	//post(url, json, isReSend, bytesLength);
 }
 
 function post (url, json, isReSend, bytesLength) {
@@ -163,61 +166,21 @@ readUart();
 
 new CronJob('00 * * * * *', function () {
 	console.log('--- ' + new Date());
-	var json = {};
+	var line;
 
 	uart.writeStr('A');
 	sleep(1000);
-	json.temperature = readUart();
+	line = readUart();
+	console.log(line);
 
-	uart.writeStr('B');
-	sleep(1000);
-	json.humidity = readUart();
-
-	uart.writeStr('C');
-	sleep(1000);
-	json.pressure = readUart();
-
-        uart.writeStr('K');                                                                                                                                              
-        sleep(1000);                                                                                                                                                     
-        json.battery = readUart();
-        
-	uart.writeStr('I');                                                                 
-        sleep(3000);                                                                        
-        json.windSpeed = readUart();    
-
-        uart.writeStr('E');                                                                 
-        sleep(1000);                                                                        
-        json.windDirection = processWindDir(readUart());
-
-        uart.writeStr('D');                                                                 
-        sleep(1000);                                                                        
-        json.precipitation = readUart();    
-	
-	if (json.precipitation == "0") {
-		json.precipitation = 0;	
-	}
-	
-	uart.writeStr('H');
-	postSingle(json);
+	//postSingle(line);
 }, null, true, 'America/Los_Angeles');
 
-// new CronJob('10,20,30,40,50 * * * * *', function () {
-// 	console.log('--- ' + new Date());
-// 	uart.writeStr('A');
-// 	sleep(1000);
-// 	console.log('Temperature ' + readUart());
-//
-// 	uart.writeStr('B');
-// 	sleep(1000);
-// 	console.log('Humidity ' + readUart());
-//
-// 	uart.writeStr('C');
-// 	sleep(1000);
-// 	console.log('Pressure ' + readUart());
-// }, null, true, 'America/Los_Angeles');
 
 console.log('Started');
 
+
+//this function use external command because it is much faster (when file is big)
 function getLastLines (linesToGet, callback) {
 	var command = util.format('tail -n %d %s', linesToGet, FILE);
 	cp.exec(command, function (err, stdout, stderr) {
@@ -227,12 +190,7 @@ function getLastLines (linesToGet, callback) {
 	});
 }
 
-function convertWindDirection (value) {
-	if (1==1) {
-		
-	}
-}
-
+//truncate file to remove what was sent
 function removeLastBytes (bytesLength, callback) {
 	fs.stat(FILE, function (err, stats) {
 		if (err) throw err;
@@ -244,6 +202,8 @@ function removeLastBytes (bytesLength, callback) {
 	});
 }
 
+
+//TODO passar para server-side - valores podem variar de estacao para estacao
 function processWindDir(value) {
   var windDir = '-';
   if (value >= 44 && value <= 72) {

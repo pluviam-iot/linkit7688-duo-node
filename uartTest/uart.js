@@ -26,9 +26,9 @@ uart.setTimeout(10000, 10000, 5000);
 sleep(200);
 readUart();
 
-for (var i = 0; i < 26; i++) {
-	console.log('sending command: ' + String.fromCharCode(97 + i));
-	uart.writeStr(String.fromCharCode(97 + i));
+while (true) {
+	console.log('sending command: ' + String.fromCharCode(97));
+	uart.writeStr(String.fromCharCode(97));
 	sleep(1000);
 	var readed = readUart();
 	console.log(readed);
