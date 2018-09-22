@@ -22,7 +22,9 @@ try {
   FILE = './db/db.txt';
 }
 var thereIsDataToSend = false;
-
+if (config.interval) {
+  INTERVAL = config.interval;
+}
 
 // Read data from Arduino
 function readUart() {
@@ -30,12 +32,16 @@ function readUart() {
   if (isDevelopment) {
     result = '20.1;90;1000;11.1;180;8;10'
   } else {
-    while (uart.dataAvailable(0)) {
-      result = result + uart.readStr(1);
+    while (uart.dataAvailable(200)) {
+      var byteRead = uart.readStr(1);
+      if (byteRead == '\n') {
+        break;
+      }
+      result = result + byteRead;
     }
   }
 
-  return new Date().toISOString() + ';' + result;
+  return Date.now() + ';' + result;
 }
 
 
@@ -138,6 +144,15 @@ function removeLastBytes(bytesLength) {
   });
 }
 
+function readUartAndSend() {
+  console.log('---> ' + new Date());
+  if (!isDevelopment) {
+    uart.writeStr('A');
+  }
+  var result = readUart();
+  tryToSend(result);  
+}
+
 function init() {
   console.log('Started ' + new Date());	
 
@@ -147,8 +162,8 @@ function init() {
     uart.setFlowcontrol(false, false);
     uart.setTimeout(10000, 10000, 5000);
   }
-  var result = readUart();
-  tryToSend(result);
+
+  readUartAndSend();
 
   var intervalDelay = INTERVAL;
   intervalDelay += new Date().getTime();
@@ -156,26 +171,25 @@ function init() {
   setInterval(function() {
     if (new Date() > intervalDelay) {
       intervalDelay += INTERVAL;
-      console.log('---> ' + new Date());
-      if (!isDevelopment) {
-        uart.writeStr('A');
-      }
-      var result = readUart();
-      tryToSend(result);
+      readUartAndSend();
     }
   }, 1000);
 }
 
+// Check if there are data in the failback file
 try {
   var stats = fs.statSync(FILE);
   thereIsDataToSend = stats.size > 0;
   console.log('thereIsDataToSend ' + sendDataFile);
 } catch(error) {}
 
+// Clear buffer
+readUart();
+
 var dateReference = new Date();
 var msWaitToInitialize = 1000 * (60 - dateReference.getSeconds());
 if (isDevelopment) {
-  msWaitToInitialize = 0;config.stationId
+  msWaitToInitialize = 0;
 }
 console.log('Now is ' + dateReference + ' Wait ' + (msWaitToInitialize / 1000.0) + 's to initialize!');
 setTimeout(init, msWaitToInitialize);
