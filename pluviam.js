@@ -22,7 +22,7 @@ try {
   FILE = './db/db.txt';
 }
 var thereIsDataToSend = false;
-if (config.interval) {
+if (!isDevelopment && config.interval) {
   INTERVAL = config.interval;
 }
 
@@ -30,18 +30,19 @@ if (config.interval) {
 function readUart() {
   var result = '';
   if (isDevelopment) {
-    result = '20.1;90;1000;11.1;180;8;10'
+    result = '20.1;90;1000;11.1;180;8;10\n'
   } else {
     while (uart.dataAvailable(200)) {
       var byteRead = uart.readStr(1);
-      if (byteRead == '\n') {
-        break;
-      }
       result = result + byteRead;
     }
   }
 
-  return Date.now() + ';' + result;
+  // This is necessary because sometimes there are some old bytes in the buffer of arduino 
+  var splited = result.split('\n');
+  if (splited.length > 1) {
+    return Date.now() + ';' + splited[splited.length - 2] + '\n';
+  }
 }
 
 
@@ -62,7 +63,7 @@ function sendData(dataToSend) {
         getLastLines(LINES_TO_GET).then(function(linesToSend) {
           console.log('[Socket] Send txt data together');
           dataFile = linesToSend;
-          dataToSend += '\n' + linesToSend;
+          dataToSend += linesToSend;
           client.write(dataToSend);
         }).catch(function(_error) {
           client.write(dataToSend);
@@ -111,7 +112,7 @@ function tryToSend(data) {
 
 function appendFile(line) {
   console.log('[AppendFile] ' + line);
-  fs.appendFile(FILE, line + "\n", function (err) {
+  fs.appendFile(FILE, line, function (err) {
     if (err) {
       console.log(err);
       return;
