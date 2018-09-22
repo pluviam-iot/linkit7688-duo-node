@@ -43,6 +43,8 @@ function readUart() {
   if (splited.length > 1) {
     return Date.now() + ';' + splited[splited.length - 2] + '\n';
   }
+
+  return '';
 }
 
 
