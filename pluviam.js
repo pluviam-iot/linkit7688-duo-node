@@ -1,15 +1,10 @@
 'use strict';
 
-//TODO put it in external json
-var serverUrl = 'backyard.pluvi.am';
-var stationId = '59f3eaf328c6a2439fd1323a';
-var token = 'wfho989ndg7kcs6c';
-
-
 var FILE = '/pluviam/db/db';
 var LINES_TO_GET = 10;
+var INTERVAL = 60000;
 
-var CronJob = require('cron').CronJob;
+var config = require('./config');
 var fs = require('fs');
 var http = require('http');
 var util = require('util');
@@ -53,7 +48,7 @@ function post (url, json, isReSend, bytesLength) {
 //	console.log(json);
 	var body = JSON.stringify(json);
 	var options = {
-		hostname: serverUrl,
+		hostname: config.serverUrl,
 		port: 80,
 		path: url,
 		method: 'POST',
@@ -164,21 +159,32 @@ uart.setTimeout(10000, 10000, 5000);
 sleep(200);
 readUart();
 
-new CronJob('00 * * * * *', function () {
-	console.log('--- ' + new Date());
-	var line;
 
-	uart.writeStr('A');
-	sleep(1000);
-	line = readUart();
-	console.log(line);
+var intervalDelay = INTERVAL;
+intervalDelay += new Date().getTime();
 
-	//postSingle(line);
-}, null, true, 'America/Los_Angeles');
+
+setInterval(function() {
+	if (new Date() > intervalDelay) {
+		intervalDelay += INTERVAL;
+		console.log('--- ' + new Date());
+		uart.writeStr('A');
+		sleep(200);
+
+		var date = new Date();
+		var line;
+		//line = date.toISOString() + ';';
+		line += config.stationId + ';';
+		line += config.token + ';';
+		
+		line += readUart();
+
+		console.log(line);
+	}
+}, 1000);
 
 
 console.log('Started');
-
 
 //this function use external command because it is much faster (when file is big)
 function getLastLines (linesToGet, callback) {
