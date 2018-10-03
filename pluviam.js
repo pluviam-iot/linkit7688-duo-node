@@ -141,6 +141,7 @@ function removeLastBytes(bytesLength) {
       if (err) reject(err);
       fs.truncate(FILE, stats.size - bytesLength, function(err) {
         if (err) reject(err);
+        thereIsDataToSend = fs.statSync(FILE).size > 0;
         resolve();
       });
     });
