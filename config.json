@@ -1,5 +1,5 @@
 {
     "serverUrl": "192.168.10.74",
-    "stationId": "59834bc81d1f1c0f08dd086b",
-    "interval": "60000"
+    "stationId": "",
+    "interval": 60000
 }

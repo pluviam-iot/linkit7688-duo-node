@@ -23,7 +23,7 @@ try {
 }
 var thereIsDataToSend = false;
 if (!isDevelopment && config.interval) {
-  INTERVAL = config.interval;
+  INTERVAL = +config.interval;
 }
 
 // Read data from Arduino
